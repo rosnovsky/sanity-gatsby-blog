@@ -48,10 +48,10 @@ const Loading = () => {
 }
 
 export default function Covid() {
-  const [yesterdayHospitalizations, setYesterdayHospitalizations] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [today, setToday] = useState([2021, 0, 28])
 
+  // add vaccinations call: https://github.com/vercel/swr/discussions/786
+  //  https://jhucoronavirus.azureedge.net/jhucoronavirus/global_vaccines.json
   const fetcher = async (url: string) => {
     const data = await fetch(url, {
       method: 'GET',
@@ -61,13 +61,13 @@ export default function Covid() {
       })
       .then((data) => {
         const massagedData: CovidFetchData = {
-          date: data[0].date,
-          positive: data[0].positive,
-          positiveIncrease: data[0].positiveIncrease,
-          death: data[0].death,
-          deathIncrease: data[0].deathIncrease,
-          hospitalizedCurrently: data[0].hospitalizedCurrently,
-          hospitalizedIncrease: data[0].hospitalizedIncrease,
+          date: data.timestamp,
+          positive: data.confirmed_cases.all,
+          positiveIncrease: data.confirmed_cases.day,
+          death: data.deaths.all,
+          deathIncrease: data.deaths.day,
+          // hospitalizedCurrently: data[0].hospitalizedCurrently,
+          // hospitalizedIncrease: data[0].hospitalizedIncrease,
         }
         return massagedData
       })
@@ -75,7 +75,7 @@ export default function Covid() {
   }
 
   const { data, error } = useSWR(
-    'https://api.covidtracking.com/v1/us/current.json',
+    'https://jhucoronavirus.azureedge.net/jhucoronavirus/regions/us.json',
     fetcher,
     {
       refreshInterval: 60000,
@@ -87,48 +87,15 @@ export default function Covid() {
       },
       shouldRetryOnError: true,
       refreshWhenHidden: true,
-      onSuccess: (data) => {
-        const date = data.date.toString()
-
-        const todayArray: number[] = [
-          Number(date.slice(0, 4)),
-          Number(date.slice(4, 6)),
-          Number(date.slice(6, 8)),
-        ]
-
-        setToday(todayArray)
-        const yesterdayDate = new Date(
-          todayArray[0],
-          todayArray[1] - 1,
-          todayArray[2]
-        )
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-
-        const yesterday = `${yesterdayDate.getFullYear().toString()}${
-          yesterdayDate.getMonth() > 9
-            ? yesterdayDate.getMonth().toString()
-            : `0${yesterdayDate.getMonth() + 1}`
-        }${
-          yesterdayDate.getDate() > 9
-            ? yesterdayDate.getDate().toString()
-            : `0${yesterdayDate.getDate()}`
-        }`
-
-        const yesterdayUrl = `https://api.covidtracking.com/v1/us/${yesterday}.json`
-
-        const yesterdayData = fetch(yesterdayUrl)
-          .then((response) => response.json())
-          .then((data) => data.hospitalizedCurrently)
-          .then((data) => {
-            setYesterdayHospitalizations(data)
-            setLoading(false)
-          })
+      onSuccess: () => {
+        setLoading(false)
       },
     }
   )
 
   if (error) return <span>over 220,000</span>
   if (!data) return <Loading />
+  console.log(data)
 
   return (
     <Container>
@@ -144,7 +111,7 @@ export default function Covid() {
             change={loading ? 4000 : data.deathIncrease}
             title="🇺🇸 Died of Covid-19"
           />
-          <CasesCard
+          {/* <CasesCard
             numbers={loading ? 100000 : data.hospitalizedCurrently}
             change={
               loading
@@ -152,9 +119,9 @@ export default function Covid() {
                 : -yesterdayHospitalizations + data.hospitalizedCurrently
             }
             title="🇺🇸 In Hospitals with Covid now"
-          />
+          /> */}
         </div>
-        <p className="text-sm  text-gray-600 mt-2 text-right">
+        {/* <p className="text-sm  text-gray-600 mt-2 text-right">
           Data by{' '}
           <a
             className="underline"
@@ -170,7 +137,7 @@ export default function Covid() {
             day: 'numeric',
             year: 'numeric',
           })}
-        </p>
+        </p> */}
       </div>
     </Container>
   )
