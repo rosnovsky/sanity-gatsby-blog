@@ -1,13 +1,11 @@
-// import { NowRequest, NowResponse } from '@vercel/node'
 import { PostComment } from '../../index'
-import mongoose from 'mongoose'
+import mongoose, { Mongoose } from 'mongoose'
 import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 
 const Schema = mongoose.Schema
 import { CommentSchema } from './commentSchema'
-// mongoose.set('debug', true)
 
-let Comment
+let Comment: mongoose.Model<any>
 try {
   Comment = mongoose.model('comments')
 } catch (error) {
@@ -77,7 +75,7 @@ export default withApiAuthRequired(async (req: any, res: any) => {
 
   NewComment.save({ checkKeys: false }, (err) => {
     if (err) return console.error(err)
-  })
+  }).then(result => console.log("Sending email..."))
 
   res.status(200).send({ comment: NewComment })
   // } catch (error) {
